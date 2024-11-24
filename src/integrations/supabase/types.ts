@@ -123,6 +123,83 @@ export type Database = {
           },
         ]
       }
+      news_comments: {
+        Row: {
+          author_id: string | null
+          content: string
+          created_at: string
+          id: string
+          news_post_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          news_post_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          news_post_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_comments_news_post_id_fkey"
+            columns: ["news_post_id"]
+            isOneToOne: false
+            referencedRelation: "news_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_posts: {
+        Row: {
+          author_id: string | null
+          content: string
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           content: string
@@ -205,6 +282,7 @@ export type Database = {
           bio: string | null
           created_at: string
           id: string
+          is_admin: boolean | null
           updated_at: string
           username: string
         }
@@ -213,6 +291,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           id: string
+          is_admin?: boolean | null
           updated_at?: string
           username: string
         }
@@ -221,6 +300,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           id?: string
+          is_admin?: boolean | null
           updated_at?: string
           username?: string
         }
