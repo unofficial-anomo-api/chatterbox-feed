@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import DailyPrompt from "./DailyPrompt";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -63,18 +64,22 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-border z-50 flex items-center px-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsMenuOpen(true)}
-          className="mr-4"
-        >
-          <Menu className="h-6 w-6" />
-        </Button>
-        <h1 className="text-xl font-bold text-primary">Anomours</h1>
+      <header className="fixed top-0 left-0 right-0 bg-white border-b border-border z-50">
+        <div className="h-16 flex items-center px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMenuOpen(true)}
+            className="mr-4"
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+          <h1 className="text-xl font-bold text-primary">Anomours</h1>
+        </div>
+        <DailyPrompt />
       </header>
 
+      {/* Sidebar menu */}
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
@@ -146,7 +151,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
 
-      <main className="pt-16 pb-16 min-h-screen">{children}</main>
+      <main className="pt-28 pb-16 min-h-screen">{children}</main>
     </div>
   );
 };
