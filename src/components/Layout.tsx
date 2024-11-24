@@ -1,10 +1,40 @@
-import { useState } from "react";
-import { Menu, X, Bell, Search, User, Newspaper, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, Bell, Search, User, Newspaper, LogOut, Download } from "lucide-react";
 import { Button } from "./ui/button";
+import { useToast } from "./ui/use-toast";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        toast({
+          title: "App installed successfully!",
+          description: "You can now access Anomours from your home screen.",
+        });
+      }
+      setDeferredPrompt(null);
+    } else {
+      toast({
+        title: "Installation not available",
+        description: "The app is either already installed or your browser doesn't support PWA installation.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,6 +85,13 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <div className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted cursor-pointer">
               <Newspaper className="h-6 w-6" />
               <span>News</span>
+            </div>
+            <div 
+              className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted cursor-pointer"
+              onClick={handleInstall}
+            >
+              <Download className="h-6 w-6" />
+              <span>Install App</span>
             </div>
             <div className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted cursor-pointer">
               <LogOut className="h-6 w-6" />
