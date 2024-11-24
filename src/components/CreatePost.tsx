@@ -8,7 +8,11 @@ import { useToast } from "./ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 
-const CreatePost = () => {
+interface CreatePostProps {
+  onPostCreated: () => void;
+}
+
+const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   const [content, setContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const { toast } = useToast();
@@ -44,6 +48,7 @@ const CreatePost = () => {
       
       setContent("");
       setIsAnonymous(false);
+      onPostCreated();
     } catch (error) {
       toast({
         title: "Error",

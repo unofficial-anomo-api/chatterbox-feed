@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, MoreVertical, MessageSquare, EyeOff } from "lucide-react";
 import {
   DropdownMenu,
@@ -9,9 +9,11 @@ import {
 import { Button } from "./ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { useSession } from "@supabase/auth-helpers-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "./ui/use-toast";
 
 interface Post {
-  id: number;
+  id: string;
   author: {
     name: string;
     avatar: string;
@@ -24,14 +26,90 @@ interface Post {
   author_id: string;
 }
 
-const PostCard = ({ post }: { post: Post }) => {
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(post.likes);
-  const session = useSession();
+interface PostCardProps {
+  post: Post;
+  onUpdate: () => void;
+}
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikesCount(liked ? likesCount - 1 : likesCount + 1);
+const PostCard = ({ post, onUpdate }: PostCardProps) => {
+  const [liked, setLiked] = useState(false);
+  const session = useSession();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    checkIfLiked();
+  }, [post.id, session?.user?.id]);
+
+  const checkIfLiked = async () => {
+    if (!session?.user?.id) return;
+
+    const { data } = await supabase
+      .from("likes")
+      .select("id")
+      .eq("post_id", post.id)
+      .eq("user_id", session.user.id)
+      .single();
+
+    setLiked(!!data);
+  };
+
+  const handleLike = async () => {
+    if (!session?.user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to like posts",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (liked) {
+        await supabase
+          .from("likes")
+          .delete()
+          .eq("post_id", post.id)
+          .eq("user_id", session.user.id);
+      } else {
+        await supabase
+          .from("likes")
+          .insert({
+            post_id: post.id,
+            user_id: session.user.id,
+          });
+      }
+
+      setLiked(!liked);
+      onUpdate();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to like post",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await supabase
+        .from("posts")
+        .delete()
+        .eq("id", post.id)
+        .eq("author_id", session?.user?.id);
+
+      onUpdate();
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive",
+      });
+    }
   };
 
   const isOwnPost = session?.user?.id === post.author_id;
@@ -46,7 +124,7 @@ const PostCard = ({ post }: { post: Post }) => {
             </div>
           ) : (
             <img
-              src={post.author.avatar}
+              src={post.author.avatar || "/placeholder.svg"}
               alt={post.author.name}
               className="w-10 h-10 rounded-full object-cover"
             />
@@ -72,7 +150,12 @@ const PostCard = ({ post }: { post: Post }) => {
             {isOwnPost ? (
               <>
                 <DropdownMenuItem>Edit</DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-600"
+                  onClick={handleDelete}
+                >
+                  Delete
+                </DropdownMenuItem>
               </>
             ) : (
               <>
@@ -96,9 +179,9 @@ const PostCard = ({ post }: { post: Post }) => {
             onClick={handleLike}
             className={liked ? "text-red-500" : ""}
           >
-            <Heart className="h-5 w-5" />
+            <Heart className={`h-5 w-5 ${liked ? "fill-current" : ""}`} />
           </Button>
-          <span className="text-sm text-gray-500">{likesCount}</span>
+          <span className="text-sm text-gray-500">{post.likes}</span>
         </div>
 
         <Button variant="ghost" className="flex items-center space-x-2">
