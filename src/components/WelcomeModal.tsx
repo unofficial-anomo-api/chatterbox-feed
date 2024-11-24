@@ -3,9 +3,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Auth } from "@supabase/auth-ui-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { useNavigate } from "react-router-dom";
 
 export const WelcomeModal = () => {
   const [open, setOpen] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        setOpen(false);
+        navigate('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -18,9 +31,20 @@ export const WelcomeModal = () => {
         </DialogHeader>
         <Auth
           supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
+          appearance={{ 
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: '#00D1C7',
+                  brandAccent: '#00b3aa',
+                }
+              }
+            }
+          }}
           theme="light"
           providers={[]}
+          redirectTo={window.location.origin}
         />
       </DialogContent>
     </Dialog>
