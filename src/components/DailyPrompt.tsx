@@ -27,7 +27,6 @@ const DailyPrompt = () => {
 
   const handleResponse = () => {
     const prompt = getDailyPrompt();
-    // Set the prompt as the initial post content
     navigate('/', { state: { initialPostContent: prompt } });
     setIsExpanded(false);
   };
