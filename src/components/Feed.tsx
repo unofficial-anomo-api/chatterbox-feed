@@ -59,7 +59,7 @@ const Feed = () => {
 
       if (error) throw error;
 
-      const formattedPosts = (postsData || []).map((post) => ({
+      const formattedPosts = (postsData || []).map((post: any) => ({
         id: post.id,
         author: {
           name: post.profiles?.username || "Anonymous",
@@ -67,8 +67,8 @@ const Feed = () => {
         },
         content: post.content,
         timestamp: new Date(post.created_at),
-        likes: post.likes_count || 0,
-        comments: post.comments_count || 0,
+        likes: Array.isArray(post.likes_count) ? post.likes_count[0]?.count || 0 : 0,
+        comments: Array.isArray(post.comments_count) ? post.comments_count[0]?.count || 0 : 0,
         is_anonymous: post.is_anonymous,
         author_id: post.author_id,
       }));
