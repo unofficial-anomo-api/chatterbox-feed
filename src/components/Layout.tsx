@@ -18,7 +18,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         >
           <Menu className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl font-bold text-primary">Microblog</h1>
+        <h1 className="text-xl font-bold text-primary">Anomours</h1>
       </header>
 
       {/* Side Menu */}
@@ -29,7 +29,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       >
         <div className="p-4">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-xl font-bold">Menu</h2>
+            <h2 className="text-xl font-bold text-primary">Menu</h2>
             <Button
               variant="ghost"
               size="icon"
