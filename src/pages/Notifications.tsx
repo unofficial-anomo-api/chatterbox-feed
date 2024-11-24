@@ -9,18 +9,24 @@ import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDistanceToNow } from "date-fns";
 
+interface Profile {
+  username: string;
+  avatar_url: string | null;
+}
+
 interface Notification {
   id: string;
-  type: 'like_post' | 'like_comment' | 'follow' | 'mention' | 'comment';
+  type: 'like_post' | 'like_comment' | 'follow' | 'mention' | 'comment' | 'comment_reply';
   content: string;
   created_at: string;
   is_read: boolean;
   reference_id: string;
   notification_group_id: string;
-  profiles: {
-    username: string;
-    avatar_url: string | null;
-  };
+  profiles: Profile;
+}
+
+interface NotificationResponse extends Omit<Notification, 'profiles'> {
+  profiles: Profile;
 }
 
 const NotificationIcon = ({ type }: { type: Notification['type'] }) => {
@@ -59,7 +65,12 @@ const Notifications = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Notification[];
+      
+      // Transform the response to match our Notification type
+      return (data as NotificationResponse[]).map(notification => ({
+        ...notification,
+        profiles: notification.profiles
+      })) as Notification[];
     },
     enabled: !!session?.user,
   });
