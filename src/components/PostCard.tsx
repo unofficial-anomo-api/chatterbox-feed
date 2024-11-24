@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, MoreVertical, MessageSquare, EyeOff } from "lucide-react";
+import { Heart, MoreVertical, MessageSquare, EyeOff, Bell, BellOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,11 +33,13 @@ interface PostCardProps {
 
 const PostCard = ({ post, onUpdate }: PostCardProps) => {
   const [liked, setLiked] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const session = useSession();
   const { toast } = useToast();
 
   useEffect(() => {
     checkIfLiked();
+    checkIfSubscribed();
   }, [post.id, session?.user?.id]);
 
   const checkIfLiked = async () => {
@@ -51,6 +53,19 @@ const PostCard = ({ post, onUpdate }: PostCardProps) => {
       .single();
 
     setLiked(!!data);
+  };
+
+  const checkIfSubscribed = async () => {
+    if (!session?.user?.id) return;
+
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("post_id", post.id)
+      .eq("user_id", session.user.id)
+      .single();
+
+    setIsSubscribed(!!data);
   };
 
   const handleLike = async () => {
@@ -85,6 +100,48 @@ const PostCard = ({ post, onUpdate }: PostCardProps) => {
       toast({
         title: "Error",
         description: "Failed to like post",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubscribe = async () => {
+    if (!session?.user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to subscribe to posts",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isSubscribed) {
+        await supabase
+          .from("subscriptions")
+          .delete()
+          .eq("post_id", post.id)
+          .eq("user_id", session.user.id);
+      } else {
+        await supabase
+          .from("subscriptions")
+          .insert({
+            post_id: post.id,
+            user_id: session.user.id,
+          });
+      }
+
+      setIsSubscribed(!isSubscribed);
+      toast({
+        title: isSubscribed ? "Unsubscribed" : "Subscribed",
+        description: isSubscribed 
+          ? "You will no longer receive notifications for this post" 
+          : "You will receive notifications for new comments on this post",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update subscription",
         variant: "destructive",
       });
     }
@@ -147,7 +204,28 @@ const PostCard = ({ post, onUpdate }: PostCardProps) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem>Share</DropdownMenuItem>
-            {isOwnPost ? (
+            {!isOwnPost && (
+              <>
+                <DropdownMenuItem onClick={handleSubscribe}>
+                  {isSubscribed ? (
+                    <>
+                      <BellOff className="h-4 w-4 mr-2" />
+                      Unsubscribe
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="h-4 w-4 mr-2" />
+                      Subscribe
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem>Follow User</DropdownMenuItem>
+                <DropdownMenuItem>Mute User</DropdownMenuItem>
+                <DropdownMenuItem>Block User</DropdownMenuItem>
+                <DropdownMenuItem>Chat</DropdownMenuItem>
+              </>
+            )}
+            {isOwnPost && (
               <>
                 <DropdownMenuItem>Edit</DropdownMenuItem>
                 <DropdownMenuItem 
@@ -156,13 +234,6 @@ const PostCard = ({ post, onUpdate }: PostCardProps) => {
                 >
                   Delete
                 </DropdownMenuItem>
-              </>
-            ) : (
-              <>
-                <DropdownMenuItem>Follow User</DropdownMenuItem>
-                <DropdownMenuItem>Mute User</DropdownMenuItem>
-                <DropdownMenuItem>Block User</DropdownMenuItem>
-                <DropdownMenuItem>Chat</DropdownMenuItem>
               </>
             )}
           </DropdownMenuContent>

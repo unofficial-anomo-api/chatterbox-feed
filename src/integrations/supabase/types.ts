@@ -129,7 +129,9 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean | null
-          type: string
+          notification_group_id: string | null
+          reference_id: string | null
+          type: Database["public"]["Enums"]["notification_type"]
           user_id: string
         }
         Insert: {
@@ -137,7 +139,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean | null
-          type: string
+          notification_group_id?: string | null
+          reference_id?: string | null
+          type: Database["public"]["Enums"]["notification_type"]
           user_id: string
         }
         Update: {
@@ -145,7 +149,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean | null
-          type?: string
+          notification_group_id?: string | null
+          reference_id?: string | null
+          type?: Database["public"]["Enums"]["notification_type"]
           user_id?: string
         }
         Relationships: [
@@ -220,6 +226,42 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -228,7 +270,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      notification_type:
+        | "like_post"
+        | "like_comment"
+        | "follow"
+        | "mention"
+        | "comment"
+        | "comment_reply"
     }
     CompositeTypes: {
       [_ in never]: never
