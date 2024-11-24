@@ -27,11 +27,13 @@ const CreatePost = () => {
     }
 
     try {
-      const { error } = await supabase.from("posts").insert({
-        content,
-        author_id: session.user.id,
-        is_anonymous: isAnonymous,
-      });
+      const { error } = await supabase
+        .from("posts")
+        .insert({
+          content,
+          author_id: session.user.id,
+          is_anonymous: isAnonymous,
+        });
 
       if (error) throw error;
 

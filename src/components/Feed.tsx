@@ -15,6 +15,8 @@ const Feed = () => {
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
       likes: 42,
       comments: 7,
+      is_anonymous: false,
+      author_id: "1",
     },
     {
       id: 2,
@@ -26,6 +28,8 @@ const Feed = () => {
       timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
       likes: 15,
       comments: 3,
+      is_anonymous: false,
+      author_id: "2",
     },
   ]);
 
