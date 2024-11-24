@@ -48,22 +48,18 @@ const Feed = () => {
           is_anonymous,
           created_at,
           author_id,
-          profiles (
+          profiles:profiles (
             username,
             avatar_url
           ),
-          (
-            SELECT count(*) FROM likes WHERE post_id = posts.id
-          ) as likes_count,
-          (
-            SELECT count(*) FROM comments WHERE post_id = posts.id
-          ) as comments_count
+          likes_count:likes(count),
+          comments_count:comments(count)
         `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      const formattedPosts = postsData.map((post) => ({
+      const formattedPosts = (postsData || []).map((post) => ({
         id: post.id,
         author: {
           name: post.profiles?.username || "Anonymous",
