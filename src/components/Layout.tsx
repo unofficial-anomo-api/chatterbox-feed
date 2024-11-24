@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Bell, Search, User, Newspaper, LogOut, Download } from "lucide-react";
+import { Menu, X, Bell, Search, User, Newspaper, LogOut, Download, Home, Settings } from "lucide-react";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DailyPrompt from "./DailyPrompt";
@@ -14,6 +14,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const { handleLogout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Fetch notifications count
   const { data: notificationsCount = 0 } = useQuery({
@@ -63,25 +64,30 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-border z-50">
+    <div className="min-h-screen bg-background" onClick={(e) => {
+      // Close menu when clicking outside
+      if (isMenuOpen && e.target instanceof HTMLElement && !e.target.closest('.menu-container')) {
+        setIsMenuOpen(false);
+      }
+    }}>
+      <header className="fixed top-0 left-0 right-0 bg-primary border-b border-border z-50">
         <div className="h-16 flex items-center px-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsMenuOpen(true)}
-            className="mr-4"
+            className="mr-4 text-white hover:text-white/80"
           >
             <Menu className="h-6 w-6" />
           </Button>
-          <h1 className="text-xl font-bold text-primary">Anomours</h1>
+          <h1 className="text-xl font-bold text-white">Anomours</h1>
         </div>
         <DailyPrompt />
       </header>
 
       {/* Sidebar menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
+        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 menu-container ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -100,10 +106,24 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex flex-col space-y-6">
             <div 
               className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted cursor-pointer"
+              onClick={() => handleMenuClick('/')}
+            >
+              <Home className="h-6 w-6" />
+              <span>Feed</span>
+            </div>
+            <div 
+              className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted cursor-pointer"
               onClick={() => handleMenuClick('/profile')}
             >
               <User className="h-6 w-6" />
               <span>Profile</span>
+            </div>
+            <div 
+              className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted cursor-pointer"
+              onClick={() => handleMenuClick('/settings')}
+            >
+              <Settings className="h-6 w-6" />
+              <span>Settings</span>
             </div>
             <div 
               className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted cursor-pointer"

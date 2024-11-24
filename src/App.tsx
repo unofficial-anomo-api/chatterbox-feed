@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import Search from "./pages/Search";
 import Notifications from "./pages/Notifications";
 import News from "./pages/News";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/search" element={<Search />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/news" element={<News />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

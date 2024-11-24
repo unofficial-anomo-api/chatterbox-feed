@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
+import { useNavigate } from "react-router-dom";
 
 const prompts = [
   "What's your biggest achievement this week?",
@@ -11,18 +12,24 @@ const prompts = [
   "What's the best advice you've ever received?",
   "Share a goal you're working towards",
   "What's your favorite way to relax?",
-  // Add more prompts as needed
 ];
 
 const DailyPrompt = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
 
-  // Get a random prompt based on the current date
   const getDailyPrompt = () => {
     const today = new Date();
     const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
     const index = seed % prompts.length;
     return prompts[index];
+  };
+
+  const handleResponse = () => {
+    const prompt = getDailyPrompt();
+    // Set the prompt as the initial post content
+    navigate('/', { state: { initialPostContent: prompt } });
+    setIsExpanded(false);
   };
 
   return (
@@ -39,7 +46,15 @@ const DailyPrompt = () => {
         
         {isExpanded && (
           <Card className="p-4 mt-2 bg-card text-card-foreground">
-            <p className="text-lg font-medium">{getDailyPrompt()}</p>
+            <p className="text-lg font-medium mb-4">{getDailyPrompt()}</p>
+            <Button
+              onClick={handleResponse}
+              variant="secondary"
+              className="flex items-center gap-2"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Respond to Prompt
+            </Button>
           </Card>
         )}
       </div>
