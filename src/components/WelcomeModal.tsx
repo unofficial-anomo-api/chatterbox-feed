@@ -9,7 +9,6 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useToast } from "./ui/use-toast";
-import { AuthChangeEvent } from "@supabase/supabase-js";
 
 export const WelcomeModal = () => {
   const [open, setOpen] = useState(true);
@@ -20,8 +19,8 @@ export const WelcomeModal = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent) => {
-      if (event === AuthChangeEvent.SIGNED_UP) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_UP') {
         try {
           const { error } = await supabase.auth.updateUser({
             data: { username: username }
