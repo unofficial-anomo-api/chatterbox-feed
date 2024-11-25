@@ -1,67 +1,36 @@
-import { useState, useEffect } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "../ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import PostHeader from "./PostHeader";
 import PostActions from "./PostActions";
 import CommentsPanel from "../CommentsPanel";
+import { useState } from "react";
+import { usePostInteractions } from "@/hooks/usePostInteractions";
 import type { PostCardProps } from "./types";
 
 const PostCard = ({ post, onUpdate }: PostCardProps) => {
-  const [liked, setLiked] = useState(false);
   const [isCommentsPanelOpen, setIsCommentsPanelOpen] = useState(false);
   const session = useSession();
   const { toast } = useToast();
+  const { liked, isSubscribed, handleLike, handleSubscribe } = usePostInteractions(post.id);
 
-  useEffect(() => {
-    checkIfLiked();
-  }, [post.id, session?.user?.id]);
-
-  const checkIfLiked = async () => {
-    if (!session?.user?.id) return;
-
-    const { data } = await supabase
-      .from("likes")
-      .select("id")
-      .eq("post_id", post.id)
-      .eq("user_id", session.user.id)
-      .single();
-
-    setLiked(!!data);
-  };
-
-  const handleLike = async () => {
-    if (!session?.user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to like posts",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleDelete = async () => {
     try {
-      if (liked) {
-        await supabase
-          .from("likes")
-          .delete()
-          .eq("post_id", post.id)
-          .eq("user_id", session.user.id);
-      } else {
-        await supabase
-          .from("likes")
-          .insert({
-            post_id: post.id,
-            user_id: session.user.id,
-          });
-      }
+      await supabase
+        .from("posts")
+        .delete()
+        .eq("id", post.id)
+        .eq("author_id", session?.user?.id);
 
-      setLiked(!liked);
       onUpdate();
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to like post",
+        description: "Failed to delete post",
         variant: "destructive",
       });
     }
@@ -71,7 +40,14 @@ const PostCard = ({ post, onUpdate }: PostCardProps) => {
 
   return (
     <div className="bg-white rounded-lg shadow p-4 space-y-4">
-      <PostHeader post={post} onUpdate={onUpdate} isOwnPost={isOwnPost} />
+      <PostHeader 
+        post={post} 
+        onUpdate={onUpdate} 
+        isOwnPost={isOwnPost} 
+        onDelete={handleDelete}
+        isSubscribed={isSubscribed}
+        onSubscribe={handleSubscribe}
+      />
       
       <p className="text-gray-800">{post.content}</p>
 
