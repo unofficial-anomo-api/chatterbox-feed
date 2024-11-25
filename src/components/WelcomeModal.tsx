@@ -19,7 +19,7 @@ export const WelcomeModal = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_UP') {
         try {
           const { error } = await supabase.auth.updateUser({
