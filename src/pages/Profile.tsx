@@ -53,7 +53,14 @@ const Profile = () => {
     }
   };
 
-  const getNextUsernameChangeDate = (lastChange: string) => {
+  const canChangeUsername = (lastChange: string | null): boolean => {
+    if (!lastChange) return true;
+    const changeDate = new Date(lastChange);
+    const cooldownEnds = new Date(changeDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return new Date() >= cooldownEnds;
+  };
+
+  const getNextUsernameChangeDate = (lastChange: string): string => {
     const changeDate = new Date(lastChange);
     const nextChangeDate = new Date(changeDate.getTime() + 7 * 24 * 60 * 60 * 1000);
     return nextChangeDate.toLocaleDateString();
@@ -63,21 +70,28 @@ const Profile = () => {
     e.preventDefault();
     if (!session?.user || !profile) return;
 
+    // Check if username is being changed
+    const isUsernameChange = profile.username !== originalUsername;
+    
+    // Validate username change cooldown
+    if (isUsernameChange && profile.last_username_change && !canChangeUsername(profile.last_username_change)) {
+      toast({
+        title: "Error",
+        description: `Username can only be changed once per week. Next change available after ${getNextUsernameChangeDate(profile.last_username_change)}`,
+        variant: "destructive",
+      });
+      // Reset username to original
+      setProfile(prev => prev ? { ...prev, username: originalUsername } : null);
+      return;
+    }
+
     setUpdating(true);
     try {
       const updates: { bio?: string; username?: string } = {
         bio: profile.bio
       };
       
-      if (profile.username !== originalUsername) {
-        if (profile.last_username_change) {
-          const lastChange = new Date(profile.last_username_change);
-          const cooldownEnds = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
-          
-          if (cooldownEnds > new Date()) {
-            throw new Error(`Username can only be changed once per week. You can change it again after ${getNextUsernameChangeDate(profile.last_username_change)}`);
-          }
-        }
+      if (isUsernameChange) {
         updates.username = profile.username;
       }
 
@@ -95,8 +109,7 @@ const Profile = () => {
       
       if (updates.username) {
         setOriginalUsername(updates.username);
-        // Refresh profile to get the new last_username_change
-        fetchProfile();
+        await fetchProfile(); // Refresh to get the new last_username_change
       }
     } catch (error: any) {
       toast({
@@ -104,7 +117,7 @@ const Profile = () => {
         description: error.message || "Failed to update profile",
         variant: "destructive",
       });
-      // Revert username to original if there was an error
+      // Reset username to original if there was an error
       setProfile(prev => prev ? { ...prev, username: originalUsername } : null);
     } finally {
       setUpdating(false);
