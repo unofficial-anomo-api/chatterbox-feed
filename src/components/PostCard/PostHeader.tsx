@@ -6,9 +6,12 @@ import PostMenu from "./PostMenu";
 
 interface PostHeaderProps extends Pick<PostCardProps, "post" | "onUpdate"> {
   isOwnPost: boolean;
+  onDelete: () => Promise<void>;
+  isSubscribed: boolean;
+  onSubscribe: () => Promise<void>;
 }
 
-const PostHeader = ({ post, onUpdate, isOwnPost }: PostHeaderProps) => {
+const PostHeader = ({ post, onUpdate, isOwnPost, onDelete, isSubscribed, onSubscribe }: PostHeaderProps) => {
   return (
     <div className="flex justify-between items-start">
       <div className="flex items-center space-x-3">
@@ -33,7 +36,14 @@ const PostHeader = ({ post, onUpdate, isOwnPost }: PostHeaderProps) => {
         </div>
       </div>
       
-      <PostMenu post={post} onUpdate={onUpdate} isOwnPost={isOwnPost} />
+      <PostMenu 
+        post={post} 
+        onUpdate={onUpdate} 
+        isOwnPost={isOwnPost} 
+        onDelete={onDelete}
+        isSubscribed={isSubscribed}
+        onSubscribe={onSubscribe}
+      />
     </div>
   );
 };
