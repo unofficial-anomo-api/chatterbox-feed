@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Auth } from "@supabase/auth-ui-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,28 +18,28 @@ export const WelcomeModal = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSignUp = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: username,
-          },
-        },
-      });
-      
-      if (error) throw error;
-      setStep('avatar');
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sign up",
-        variant: "destructive",
-      });
-    }
-  };
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_UP') {
+        try {
+          const { error } = await supabase.auth.updateUser({
+            data: { username: username }
+          });
+          
+          if (error) throw error;
+          setStep('avatar');
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to update user data",
+            variant: "destructive",
+          });
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [username, toast]);
 
   const handleAvatarSubmit = async () => {
     try {
@@ -104,11 +104,6 @@ export const WelcomeModal = () => {
               theme="light"
               providers={[]}
               redirectTo={window.location.origin}
-              onSubmit={async (formData) => {
-                if (formData.type === 'signup') {
-                  await handleSignUp(formData.email, formData.password);
-                }
-              }}
             />
           </div>
         )}
