@@ -53,18 +53,31 @@ const Profile = () => {
     }
   };
 
+  const getNextUsernameChangeDate = (lastChange: string) => {
+    const changeDate = new Date(lastChange);
+    const nextChangeDate = new Date(changeDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return nextChangeDate.toLocaleDateString();
+  };
+
   const updateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!session?.user || !profile) return;
 
     setUpdating(true);
     try {
-      // Only include username in the update if it has changed
       const updates: { bio?: string; username?: string } = {
         bio: profile.bio
       };
       
       if (profile.username !== originalUsername) {
+        if (profile.last_username_change) {
+          const lastChange = new Date(profile.last_username_change);
+          const cooldownEnds = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
+          
+          if (cooldownEnds > new Date()) {
+            throw new Error(`Username can only be changed once per week. You can change it again after ${getNextUsernameChangeDate(profile.last_username_change)}`);
+          }
+        }
         updates.username = profile.username;
       }
 
@@ -73,23 +86,17 @@ const Profile = () => {
         .update(updates)
         .eq("id", session.user.id);
 
-      if (error) {
-        if (error.message.includes("Username can only be changed once per week")) {
-          const lastChange = new Date(profile.last_username_change || "");
-          const nextChangeDate = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
-          throw new Error(`Username can only be changed once per week. You can change it again after ${nextChangeDate.toLocaleDateString()}`);
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
         description: "Profile updated successfully",
       });
       
-      // Update the original username if the update was successful
       if (updates.username) {
         setOriginalUsername(updates.username);
+        // Refresh profile to get the new last_username_change
+        fetchProfile();
       }
     } catch (error: any) {
       toast({
@@ -140,6 +147,11 @@ const Profile = () => {
                     )
                   }
                 />
+                {profile?.last_username_change && profile.username !== originalUsername && (
+                  <p className="text-sm text-muted-foreground">
+                    Next username change available after: {getNextUsernameChangeDate(profile.last_username_change)}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
