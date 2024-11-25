@@ -30,17 +30,38 @@ export const WelcomeModal = () => {
 
   const handleUsernameSubmit = async () => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ username })
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error('No user found');
 
-      if (error) throw error;
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from('profiles')
+          .update({ username })
+          .eq('id', user.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new profile
+        const { error } = await supabase
+          .from('profiles')
+          .insert([{ id: user.id, username }]);
+        
+        if (error) throw error;
+      }
+
       setStep('avatar');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update username",
+        description: error.message || "Failed to update username",
         variant: "destructive",
       });
     }
@@ -56,10 +77,10 @@ export const WelcomeModal = () => {
       if (error) throw error;
       setOpen(false);
       navigate('/');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update avatar",
+        description: error.message || "Failed to update avatar",
         variant: "destructive",
       });
     }
