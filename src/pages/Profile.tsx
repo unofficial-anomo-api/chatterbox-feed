@@ -14,6 +14,7 @@ interface Profile {
   username: string;
   avatar_url: string | null;
   bio: string | null;
+  last_username_change: string | null;
 }
 
 const Profile = () => {
@@ -22,6 +23,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [originalUsername, setOriginalUsername] = useState("");
 
   useEffect(() => {
     fetchProfile();
@@ -33,12 +35,13 @@ const Profile = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("username, avatar_url, bio")
+        .select("username, avatar_url, bio, last_username_change")
         .eq("id", session.user.id)
         .single();
 
       if (error) throw error;
       setProfile(data);
+      setOriginalUsername(data.username);
     } catch (error) {
       toast({
         title: "Error",
@@ -56,26 +59,46 @@ const Profile = () => {
 
     setUpdating(true);
     try {
+      // Only include username in the update if it has changed
+      const updates: { bio?: string; username?: string } = {
+        bio: profile.bio
+      };
+      
+      if (profile.username !== originalUsername) {
+        updates.username = profile.username;
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          username: profile.username,
-          bio: profile.bio,
-        })
+        .update(updates)
         .eq("id", session.user.id);
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("Username can only be changed once per week")) {
+          const lastChange = new Date(profile.last_username_change || "");
+          const nextChangeDate = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
+          throw new Error(`Username can only be changed once per week. You can change it again after ${nextChangeDate.toLocaleDateString()}`);
+        }
+        throw error;
+      }
 
       toast({
         title: "Success",
         description: "Profile updated successfully",
       });
-    } catch (error) {
+      
+      // Update the original username if the update was successful
+      if (updates.username) {
+        setOriginalUsername(updates.username);
+      }
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: error.message || "Failed to update profile",
         variant: "destructive",
       });
+      // Revert username to original if there was an error
+      setProfile(prev => prev ? { ...prev, username: originalUsername } : null);
     } finally {
       setUpdating(false);
     }
