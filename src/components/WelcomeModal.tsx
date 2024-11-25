@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Auth } from "@supabase/auth-ui-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,56 +12,30 @@ import { useToast } from "./ui/use-toast";
 
 export const WelcomeModal = () => {
   const [open, setOpen] = useState(true);
-  const [step, setStep] = useState<'auth' | 'username' | 'avatar'>('auth');
-  const [username, setUsername] = useState('');
+  const [step, setStep] = useState<'auth' | 'avatar'>('auth');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [username, setUsername] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        setStep('username');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleUsernameSubmit = async () => {
+  const handleSignUp = async (email: string, password: string) => {
     try {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) throw new Error('No user found');
-
-      // First check if profile exists
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (existingProfile) {
-        // Update existing profile
-        const { error } = await supabase
-          .from('profiles')
-          .update({ username })
-          .eq('id', user.id);
-        
-        if (error) throw error;
-      } else {
-        // Create new profile
-        const { error } = await supabase
-          .from('profiles')
-          .insert([{ id: user.id, username }]);
-        
-        if (error) throw error;
-      }
-
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username: username,
+          },
+        },
+      });
+      
+      if (error) throw error;
       setStep('avatar');
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to update username",
+        description: error.message || "Failed to sign up",
         variant: "destructive",
       });
     }
@@ -99,32 +73,11 @@ export const WelcomeModal = () => {
           <DialogTitle>Welcome to Anomours</DialogTitle>
           <DialogDescription className="mb-4">
             {step === 'auth' && "An Anomo clone created to give old users some nostalgia"}
-            {step === 'username' && "Choose your username"}
             {step === 'avatar' && "Add a profile picture"}
           </DialogDescription>
         </DialogHeader>
 
         {step === 'auth' && (
-          <Auth
-            supabaseClient={supabase}
-            appearance={{ 
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: '#1EAEDB',
-                    brandAccent: '#0FA0CE',
-                  }
-                }
-              }
-            }}
-            theme="light"
-            providers={[]}
-            redirectTo={window.location.origin}
-          />
-        )}
-
-        {step === 'username' && (
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
@@ -135,13 +88,28 @@ export const WelcomeModal = () => {
                 placeholder="Choose a username"
               />
             </div>
-            <Button 
-              className="w-full" 
-              onClick={handleUsernameSubmit}
-              disabled={!username.trim()}
-            >
-              Continue
-            </Button>
+            <Auth
+              supabaseClient={supabase}
+              appearance={{ 
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: '#1EAEDB',
+                      brandAccent: '#0FA0CE',
+                    }
+                  }
+                }
+              }}
+              theme="light"
+              providers={[]}
+              redirectTo={window.location.origin}
+              onSubmit={async (formData) => {
+                if (formData.type === 'signup') {
+                  await handleSignUp(formData.email, formData.password);
+                }
+              }}
+            />
           </div>
         )}
 
